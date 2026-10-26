@@ -24,8 +24,8 @@ Changes from upstream: see [CHANGELOG.md](CHANGELOG.md).
 | Platform | Versions |
 |----------|----------|
 | Ubuntu   | jammy (22.04), noble (24.04), resolute (26.04) |
-| Debian   | bookworm (12), trixie (13) |
-| EL (Rocky/Alma/RHEL/CentOS) | 8, 9 |
+| Debian   | trixie (13) |
+| EL (Rocky/Alma/RHEL/CentOS) | 9 |
 | SUSE / openSUSE Leap | current |
 
 ## Role variables
@@ -122,6 +122,35 @@ logrotate_applications:
 
 Multiple `definitions` blocks are supported per application entry, which allows
 a single drop-in file to cover several log path patterns with different options.
+
+### OS overrides (`vars/`)
+
+These are loaded by `include_vars` from `vars/<Distribution>.yml` and are not
+meant to be overridden directly; set `logrotate_options` instead, which
+replaces them entirely.
+
+| File | `logrotate_distribution_options` |
+|------|----------------------------------|
+| `Debian.yml`, `RedHat.yml`, `CentOS.yml`, `Suse.yml` | `weekly`, `rotate 4`, `create`, `dateext` |
+| `Ubuntu.yml` | the above plus `su root syslog` |
+
+## Task flow
+
+1. **Preflight** (`tasks/preflight.yml`, first task, tag `always`): asserts
+   ansible-core >= 2.20, an OS family of Debian, RedHat or Suse,
+   `logrotate_options` and `logrotate_applications` are lists,
+   `logrotate_include_dir` is an absolute path, `logrotate_wtmp` and
+   `logrotate_btmp` define `logs` and `options`, and every
+   `logrotate_applications` entry has a `name` and `definitions` that each
+   carry `logs` and `options`.
+2. Load `vars/<Distribution>.yml` (`logrotate_distribution_options`).
+3. Install the package (`debian.yml`, `redhat.yml` or `suse.yml`).
+4. Find drop-ins in `logrotate_include_dir` that already rotate wtmp or btmp.
+5. Write `/etc/logrotate.conf`, validated with `logrotate --debug`.
+6. Write the per-application drop-ins, each validated the same way.
+7. Run `logrotate --debug /etc/logrotate.conf` on the result (skipped in
+   check mode).
+8. Optionally link `/etc/cron.hourly/logrotate` to `/etc/cron.daily/logrotate`.
 
 ## Example playbook
 

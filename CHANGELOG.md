@@ -20,6 +20,29 @@ and [human-readable changelog](https://keepachangelog.com/en/1.0.0/).
   systemd test image starts on Docker Desktop. Added the `unowned` scenario
   and a seeded-drop-in case in `default`.
 
+### Changed
+
+- Supported platforms narrowed to Debian trixie, Ubuntu jammy/noble/resolute,
+  EL 9 and SUSE/openSUSE Leap. Debian bookworm (full support ended 2026-08)
+  and EL 8 (full support ended 2024-05) are no longer claimed or tested.
+- `meta/main.yml`: removed the `platforms:` key (Galaxy ignores it and
+  ansible-lint's validator misreports it); the supported OS list now lives in
+  `description:`. Added `issue_tracker_url` and more `galaxy_tags`.
+- Added `tasks/preflight.yml`, run first from `tasks/main.yml`, asserting the
+  ansible-core version, OS family and the shape of `logrotate_options`,
+  `logrotate_applications`, `logrotate_wtmp` and `logrotate_btmp`.
+- Loop variables are now prefixed `logrotate_` (`logrotate_application`,
+  `logrotate_owned_log`) to satisfy `loop_var_prefix`. `application.j2`
+  reads `logrotate_application` instead of `item`.
+- Molecule: `default` now covers ubuntu-jammy/noble/resolute, debian-trixie,
+  rockylinux-9 and opensuse-leap15; `unowned` covers ubuntu-noble and
+  rockylinux-9. Both use the testinfra verifier (`tests/` per scenario,
+  `molecule/requirements.txt`) instead of `verify.yml`, and `converge.yml`
+  refreshes the apt/dnf cache first and uses `su root root` so the fixture
+  works on SUSE as well.
+- Synced `.ansible-lint`, `.gitignore`, `.pre-commit-config.yaml`, `.yamllint`
+  and `ruff.toml` from `roles/_template`.
+
 ### Changed — Fork Takeover (2026-05-21)
 
 Upstream repository `arillso/ansible.logrotate` was archived read-only on

@@ -1,13 +1,15 @@
 # Claude Code project notes — ansible-role-logrotate
 
-This is an Ansible role that installs and configures logrotate on
-Debian/Ubuntu, Red Hat/Rocky/Alma, and SUSE/openSUSE systems.
+Fork of [arillso/ansible.logrotate](https://github.com/arillso/ansible.logrotate)
+by arillso. This fork lives at
+https://github.com/basictheprogram/ansible-role-logrotate. Bugs and pull
+requests go to the fork repo, not upstream (upstream was archived
+read-only on 2025-11-19).
 
-Forked from arillso/ansible.logrotate
-(https://github.com/arillso/ansible.logrotate), which was archived
-read-only on 2025-11-19. Fork taken over on 2026-05-21 by Bob Tanner,
-Consolidated from two roles
-(`realtime.logrotate` + `realtime.logrotate_core`) into this single
+Ansible role to install and configure logrotate on Debian/Ubuntu,
+Red Hat/Rocky/Alma, and SUSE/openSUSE. Fork of arillso/ansible.logrotate,
+taken over 2026-05-21 following upstream archival. Consolidated from two
+roles (`realtime.logrotate` + `realtime.logrotate_core`) into this single
 role.
 
 ---
@@ -24,14 +26,15 @@ caution over speed — for trivial one-liner changes, use judgment.
 Before adding or changing anything:
 
 * State assumptions explicitly. If a variable could live in `defaults/`,
-  `vars/`, or a per-distro file, say which and why before choosing.
-* If multiple approaches exist (e.g. `ansible.builtin.lineinfile` vs
-  the Jinja2 template approach), present the tradeoff — don't pick
-  silently. This role uses templates exclusively; lineinfile is
-  explicitly not used for logrotate config.
+  `vars/`, or `host_vars`, say which and why before choosing.
+* If multiple approaches exist (e.g. `ansible.builtin.command` vs a
+  purpose-built module), present the tradeoff — don't pick silently.
+  This role uses templates exclusively; `lineinfile` is explicitly not
+  used for logrotate config.
 * If the request is ambiguous (which task file? which template block?),
   name the ambiguity and ask. Don't guess and implement.
 * If a simpler approach solves the problem, say so and push back.
+* If something conflicts with `DESIGN.md`, flag it before proceeding.
 
 ### 2. Simplicity first
 
@@ -77,6 +80,8 @@ Transform requests into verifiable outcomes:
   exists, `molecule converge` passes, `pre-commit run --all-files` clean.
 * "Add an application config variable" → rendered template matches
   expected logrotate.d syntax, `molecule verify` passes.
+* "Add a preflight assertion" → `molecule converge` passes,
+  `molecule verify` passes, `pre-commit run --all-files` is clean.
 * "Fix an idempotency bug" → second `molecule converge` reports zero
   changed tasks.
 * "Refactor a template" → rendered output is byte-for-byte identical
@@ -84,14 +89,31 @@ Transform requests into verifiable outcomes:
 
 For multi-step changes, state a brief plan before starting:
 
-    1. Edit template  → verify: rendered logrotate.conf is valid
+    1. Edit template → verify: rendered logrotate.conf is valid
     2. Add task       → verify: molecule converge green
     3. Add test       → verify: molecule verify green
     4. Lint           → verify: pre-commit run --all-files clean
 
+Strong success criteria allow independent verification. Weak criteria
+("make it work") require constant clarification.
+
 ---
 
-## Role architecture
+## Role-specific notes
+
+### Source of truth
+
+`DESIGN.md` is the authoritative spec once one exists. This role has no
+`DESIGN.md` yet (see Design notes). When it does, read it before any
+non-trivial change; if code disagrees with it, `DESIGN.md` is right —
+flag the discrepancy and ask before fixing the design to match the code.
+
+### Design notes
+
+No DESIGN.md found — add one. Until then the architecture below is the
+reference.
+
+#### Role architecture
 
 The role is self-contained — no role dependencies.
 
@@ -99,7 +121,7 @@ The role is self-contained — no role dependencies.
     vars/<Distribution>.yml    Distro-specific logrotate.conf defaults,
                                loaded by the include_vars task in
                                tasks/main.yml using lookup('first_found')
-    tasks/main.yml             Orchestrates: include_vars → distro
+    tasks/main.yml             Orchestrates: preflight → include_vars → distro
                                install → find drop-ins owning wtmp/btmp →
                                deploy logrotate.conf → deploy logrotate.d
                                configs → verify → hourly symlink
@@ -112,7 +134,7 @@ The role is self-contained — no role dependencies.
         application.j2         Per-app drop-in, rendered per entry in
                                logrotate_applications
 
-### Variable loading order
+#### Variable loading order
 
 1. `defaults/main.yml` loaded automatically by Ansible (lowest precedence).
    Sets `logrotate_distribution_options: []` as fallback.
@@ -125,11 +147,76 @@ Users configure global options via `logrotate_options` (overrides
 `logrotate_distribution_options` entirely in the template) and
 per-app configs via `logrotate_applications`.
 
-### Config management — templates only
+#### Config management — templates only
 
 All logrotate configuration is managed via Jinja2 templates.
 `ansible.builtin.lineinfile` is explicitly not used. Do not introduce
 lineinfile tasks; they produce non-idempotent, hard-to-audit config.
+
+### Secrets
+
+Role-specific secret variable names:
+
+None found. No variable in `defaults/`, `vars/` or `tasks/` matches
+`_key`, `_token`, `_password` or `_secret`, and the role uses no `no_log`.
+
+### Commit scopes
+
+Role-specific subsystem scopes: `debian`, `redhat`, `suse` (per-family
+task files), `conf` (`templates/etc/logrotate.conf.j2`), `application`
+(`templates/etc/logrotate.d/application.j2`)
+
+### Settled decisions
+
+* **Template-only config management.** No `lineinfile`. The Jinja2
+  templates render a complete, auditable `/etc/logrotate.conf`.
+* **Single role.** The two-role split (`realtime.logrotate` +
+  `realtime.logrotate_core`) was collapsed into this role on
+  2026-05-21. Do not re-introduce a dependency structure.
+* **Per-distro vars in `vars/`, not `defaults/`.** Distro-canonical
+  logrotate options live in `vars/<Distribution>.yml` and are loaded
+  explicitly. User-facing variables belong in `defaults/main.yml`.
+* **`lookup('first_found', …)` with `errors: ignore`.** Not
+  `with_first_found` + `loop_control` (deprecated). Not a hard fail
+  when no distro file is found — `logrotate_distribution_options`
+  defaults to `[]`.
+* **MIT license.** Original work by arillso. Modifications by
+  Bob Tanner. Both credited in `LICENSE`.
+* **No CI/CD in this repo yet.** Jenkins removed; GitLab CI is a
+  future effort. Do not add CI config without being asked.
+
+### Open questions
+
+If a task touches one of these, leave a `# TODO(open-q):` comment:
+
+<!-- TODO: fill in open questions -->
+
+### Implementation order
+
+Work one section at a time. Each item = one focused session and one
+commit. Stop and verify between items.
+
+1. `defaults/main.yml` — done. Public interface: `logrotate_packages`,
+   `logrotate_options`, `logrotate_include_dir`, `logrotate_global_config`,
+   `logrotate_use_hourly_rotation`, `logrotate_wtmp_*`, `logrotate_btmp_*`,
+   `logrotate_applications`.
+2. `vars/<Distribution>.yml` — done for CentOS, Debian, RedHat, Suse, Ubuntu.
+3. `tasks/` — done: `main.yml`, `debian.yml`, `redhat.yml`, `suse.yml`.
+4. `templates/` — done: `etc/logrotate.conf.j2`,
+   `etc/logrotate.d/application.j2`.
+5. `handlers/main.yml` — empty; the role defines no handlers.
+6. `molecule/` — `default` (six platforms, drop-ins own wtmp/btmp) and
+   `unowned` (ubuntu-noble, rockylinux-9) scenarios, testinfra verifier.
+   Written 2026-10-25 but not yet run on the full matrix.
+7. `tasks/preflight.yml` — done (runs first, wired from `tasks/main.yml`).
+8. testinfra suite and `molecule/requirements.txt` — done.
+
+### Consumer side notes
+
+See the Example playbook section of `README.md`. Consumers set global
+options with `logrotate_options` and per-application drop-ins with
+`logrotate_applications`. SUSE support needs the `community.general`
+collection from `requirements.yml`.
 
 ---
 
@@ -158,8 +245,8 @@ lineinfile tasks; they produce non-idempotent, hard-to-audit config.
 | Platform | Versions |
 |----------|----------|
 | Ubuntu   | jammy (22.04), noble (24.04), resolute (26.04) |
-| Debian   | bookworm (12), trixie (13) |
-| EL       | 8, 9 (Rocky, Alma, RHEL) |
+| Debian   | trixie (13) |
+| EL       | 9 (Rocky, Alma, RHEL) |
 | SUSE     | current (openSUSE Leap / SUSE Linux Enterprise) |
 
 Minimum ansible-core: **2.20**
@@ -183,44 +270,33 @@ When adding a new platform:
 
 ### Molecule verifier
 
-The verifier is the **Ansible verifier** (`molecule/default/verify.yml`).
-Tests are written as Ansible tasks using `ansible.builtin.assert` and
-`ansible.builtin.stat`. The verify playbook currently checks:
+The verifier is **pytest-testinfra** (`molecule/<scenario>/tests/`), pinned
+in `molecule/requirements.txt`. Each scenario has its own `pytest.ini`
+(see its comments: it turns off the `pytest_molecule` and `pytest-ansible`
+plugins that break under Python 3.14 and clash with testinfra).
 
-* `logrotate` package is installed (via `package_facts`)
-* `/etc/logrotate.conf` exists, is owned by root, mode `0644`
-* `logrotate --debug /etc/logrotate.conf` exits zero
-* `logrotate.conf` does not redefine wtmp/btmp when drop-ins own them
-  (`prepare.yml` seeds the drop-ins if the package does not ship them)
+* `default` runs on ubuntu-jammy, ubuntu-noble, ubuntu-resolute,
+  debian-trixie, rockylinux-9 and opensuse-leap15. `prepare.yml` installs
+  logrotate and seeds `/etc/logrotate.d/wtmp` and `btmp` when the package
+  does not ship them, so the role always meets drop-ins that own both logs.
+  Tests: `test_packages.py` (logrotate installed) and `test_config.py`
+  (`/etc/logrotate.conf` and the `mysql-backup` drop-in exist, are root
+  owned, mode `0644`; `logrotate.conf` does not redefine wtmp or btmp; each
+  is defined in exactly one file; `logrotate --debug` exits zero).
+* `unowned` (`molecule test -s unowned`) runs on ubuntu-noble and
+  rockylinux-9. `prepare.yml` removes the wtmp and btmp drop-ins, and the
+  tests assert `logrotate.conf` defines both itself and that no drop-in does.
 
-The `unowned` scenario (`molecule test -s unowned`) removes those
-drop-ins and asserts `logrotate.conf` defines wtmp and btmp itself.
-
-When adding a new feature, extend `verify.yml` with assertions that
-confirm the feature rendered correctly. Use `ansible.builtin.command`
-to inspect rendered files, `ansible.builtin.stat` for filesystem state,
-and `ansible.builtin.assert` for all conditions.
+When adding a new feature, add single-purpose test functions to
+`tests/test_config.py` (or a new `test_<subsystem>.py`): one concern per
+test, no compound assertions, `host.file` / `host.run` for state.
 
 ---
 
-## Settled decisions — don't re-litigate
+## When in doubt
 
-* **Template-only config management.** No `lineinfile`. The Jinja2
-  templates render a complete, auditable `/etc/logrotate.conf`.
-* **Single role.** The two-role split (`realtime.logrotate` +
-  `realtime.logrotate_core`) was collapsed into this role on
-  2026-05-21. Do not re-introduce a dependency structure.
-* **Per-distro vars in `vars/`, not `defaults/`.** Distro-canonical
-  logrotate options live in `vars/<Distribution>.yml` and are loaded
-  explicitly. User-facing variables belong in `defaults/main.yml`.
-* **`lookup('first_found', …)` with `errors: ignore`.** Not
-  `with_first_found` + `loop_control` (deprecated). Not a hard fail
-  when no distro file is found — `logrotate_distribution_options`
-  defaults to `[]`.
-* **MIT license.** Original work by arillso. Modifications by
-  Bob Tanner. Both credited in `LICENSE`.
-* **No CI/CD in this repo yet.** Jenkins removed; GitLab CI is a
-  future effort. Do not add CI config without being asked.
+Read this file (and `DESIGN.md` once it exists), then ask. The settled
+decisions above are load-bearing.
 
 ---
 
@@ -251,12 +327,10 @@ Determine:
 Pay special attention to:
 
 * Changes to `defaults/main.yml` — these define the role's public interface
-* Changes to `logrotate_applications` schema — consumers build data
-  structures against it
-* Changes to handler names, task names, and tags — consumers may pin
-  to them
-* Changes to template output — rendered logrotate.conf or logrotate.d
-  files must remain valid logrotate syntax
+* Changes to handler names, task names, and tags — consumers may pin to them
+* Changes to template variables that consumers override
+* Changes to config or env file templates that affect service behavior
+* Changes to `meta/main.yml` — galaxy metadata, min Ansible version, platforms
 
 If multiple files are modified, identify the **dominant intent** rather
 than listing every file.
@@ -265,26 +339,30 @@ than listing every file.
 
 Use Conventional Commits:
 
-* `feat` — new task, variable, template capability, or distro support
+* `feat` — new task, handler, variable, template, or capability
 * `fix` — bug fix or idempotency correction
-* `docs` — README, role metadata, inline comments
+* `docs` — README, role metadata documentation, inline comments
 * `style` — YAML formatting, whitespace, ansible-lint cleanup
 * `refactor` — restructure tasks/templates without behavior change
-* `perf` — performance improvement (e.g., reduced task runs)
-* `test` — molecule scenarios, verify playbook, lint config
+* `perf` — performance improvement (e.g., reduced task runs, fewer handlers)
+* `test` — molecule scenarios, lint config, CI tests
 * `chore` — galaxy metadata, dependencies, tooling
-* `ci` — GitLab CI, pre-commit hooks
+* `ci` — GitHub Actions, GitLab CI, pre-commit hooks
 
 ### Step 4 — Determine scope
 
-Infer a scope from the role layout.
+Infer a scope from the role layout or the subsystem being changed.
 
-Common scopes: `tasks`, `handlers`, `templates`, `defaults`, `vars`,
-`meta`, `molecule`, `debian`, `redhat`, `suse`.
+Common Ansible role scopes: `tasks`, `handlers`, `templates`,
+`defaults`, `vars`, `meta`, `molecule`, `docker`.
 
-Only include a scope when it adds clarity. Prefer the functional scope
-for feature-driven changes (e.g., `feat(templates): ...`) and the
-structural scope for housekeeping (e.g., `chore(meta): ...`).
+Role-specific subsystem scopes: `debian`, `redhat`, `suse` (per-family
+task files), `conf` (`templates/etc/logrotate.conf.j2`), `application`
+(`templates/etc/logrotate.d/application.j2`)
+
+Only include a scope when it adds clarity. Prefer a subsystem scope
+for feature-driven changes (e.g., `feat(tls): ...`) and a role-layout
+scope for structural changes (e.g., `refactor(tasks): ...`).
 
 ### Step 5 — Write the commit message
 
@@ -301,14 +379,15 @@ Format exactly as:
 * Use **imperative mood** ("Add", "Fix", "Update", "Remove")
 * Maximum **50 characters**
 * Describe the **result**, not the implementation
+* Prefer role-specific or Ansible terminology over generic phrasing
 
-**Body rules** (required for non-trivial changes):
+**Body rules** (required):
 
 Explain **why the change was made**, focusing on:
 
 * What deployment scenario or upstream behavior motivated it
 * What downstream role consumers need to know to upgrade safely
-* Any ansible-core or platform version constraints involved
+* Any Ansible version constraints involved
 
 When helpful, summarize key changes using bullet points.
 
@@ -318,19 +397,13 @@ When helpful, summarize key changes using bullet points.
 * Nested bullets indented with two spaces
 * No Markdown formatting of any kind
 
-Example:
-
-    * Add vars/Ubuntu.yml with distribution defaults
-    * Wire into include_vars lookup in tasks/main.yml
-
-**Ansible-specific expectations:**
+**Ansible role expectations:**
 
 * Call out new, renamed, or removed default variables
 * Note when handler names, tag names, or public task names change
 * Mention idempotency improvements when relevant
-* Reference supported platforms when adding distro-specific tasks
-* Flag changes to `meta/main.yml` (galaxy metadata, min Ansible
-  version, supported platforms)
+* Reference supported platforms when adding OS-specific tasks
+* Flag changes to `meta/main.yml` (min Ansible version, platforms)
 * Note molecule scenario additions or removals
 
 **logrotate-specific expectations:**
@@ -348,10 +421,11 @@ Example:
 A change is breaking when it:
 
 * Renames or removes a default variable
-* Changes a default value in a way that alters rotation behavior
-* Changes the `logrotate_applications` item schema
-* Drops support for an Ansible version or platform
-* Renames or removes a tag or task name consumers pin to
+* Renames or removes a handler, tag, or public task name
+* Changes a default value in a way that alters runtime behavior
+* Drops support for an Ansible version or OS platform
+* Restructures generated configuration in a way consumers' overrides
+  cannot accommodate
 
 If the diff introduces a breaking change:
 
@@ -360,19 +434,26 @@ If the diff introduces a breaking change:
 
 Examples:
 
-    feat(debian): add Ubuntu resolute (26.04) support
-    fix(templates): correct wtmp block when btmp disabled
-    refactor(tasks): split install and configure steps
-    chore(meta): drop EoL platforms bionic and focal
-    test(molecule): add assertions for logrotate.d output
+    feat(tasks): add preflight variable assertion block
+    fix(handlers): correct service restart trigger condition
+    refactor(tasks): split install and configure into files
+    chore(meta): bump minimum Ansible version to 2.20
+    test(molecule): add scenario for Ubuntu 24.04
 
-    feat(defaults)!: rename logrotate_conf to logrotate_global_config
+    feat(defaults)!: rename primary configuration variable
 
-    BREAKING CHANGE: logrotate_conf is now logrotate_global_config;
+    BREAKING CHANGE: old_variable_name is now new_variable_name;
     update playbook vars before upgrading.
 
 ### Step 6 — Output rules
 
-Return **only the commit message** — no explanation, no analysis,
-no diff, no markdown formatting, no code fences. The output will be
-pasted directly into a git commit editor.
+Return **only the commit message**. Do NOT include:
+
+* explanations or analysis
+* the diff
+* markdown formatting
+* code fences
+
+The output must be a clean commit message ready for `git commit`.
+It will be pasted directly into a git commit editor — optimize for
+copy/paste fidelity over styling.
