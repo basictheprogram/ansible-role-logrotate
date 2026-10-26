@@ -10,7 +10,7 @@
   vars:
     logrotate_options:
       - weekly
-      - su root adm
+      - su root root
       - rotate 32
       - create
       - dateext
@@ -28,6 +28,20 @@
               - notifempty
               - compress
               - delaycompress
+
+  pre_tasks:
+    - name: Update apt cache
+      ansible.builtin.apt:
+        update_cache: true
+        cache_valid_time: 3600
+        force_apt_get: true
+      changed_when: false
+      when: ansible_facts.os_family == 'Debian'
+    - name: Update dnf cache
+      ansible.builtin.dnf:
+        update_cache: true
+      changed_when: false
+      when: ansible_facts.os_family == 'RedHat'
 
   tasks:
     - name: Include role realtime.logrotate

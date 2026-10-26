@@ -5,15 +5,51 @@ dependency:
     requirements-file: requirements.yml
 driver:
   name: docker
-lint: |
-  set -e
-  yamllint .
-  ansible-lint
 platforms:
-  - name: ubuntu-24.04
-    image: "geerlingguy/docker-${MOLECULE_DISTRO:-ubuntu2404}-ansible:latest"
+  - name: ubuntu-jammy
+    image: geerlingguy/docker-ubuntu2204-ansible:latest
     cgroupns_mode: host
-    command: ${MOLECULE_DOCKER_COMMAND:-""}
+    command: ""
+    volumes:
+      - /sys/fs/cgroup:/sys/fs/cgroup:rw
+    privileged: true
+    pre_build_image: true
+  - name: ubuntu-noble
+    image: geerlingguy/docker-ubuntu2404-ansible:latest
+    cgroupns_mode: host
+    command: ""
+    volumes:
+      - /sys/fs/cgroup:/sys/fs/cgroup:rw
+    privileged: true
+    pre_build_image: true
+  - name: ubuntu-resolute
+    image: geerlingguy/docker-ubuntu2604-ansible:latest
+    cgroupns_mode: host
+    command: ""
+    volumes:
+      - /sys/fs/cgroup:/sys/fs/cgroup:rw
+    privileged: true
+    pre_build_image: true
+  - name: debian-trixie
+    image: geerlingguy/docker-debian13-ansible:latest
+    cgroupns_mode: host
+    command: ""
+    volumes:
+      - /sys/fs/cgroup:/sys/fs/cgroup:rw
+    privileged: true
+    pre_build_image: true
+  - name: rockylinux-9
+    image: geerlingguy/docker-rockylinux9-ansible:latest
+    cgroupns_mode: host
+    command: ""
+    volumes:
+      - /sys/fs/cgroup:/sys/fs/cgroup:rw
+    privileged: true
+    pre_build_image: true
+  - name: opensuse-leap15
+    image: geerlingguy/docker-opensuseleap15-ansible:latest
+    cgroupns_mode: host
+    command: ""
     volumes:
       - /sys/fs/cgroup:/sys/fs/cgroup:rw
     privileged: true
@@ -24,4 +60,8 @@ provisioner:
     prepare: ${MOLECULE_PREPARE_PLAYBOOK:-prepare.yml}
     converge: ${MOLECULE_PLAYBOOK:-converge.yml}
 verifier:
-  name: ansible
+  name: testinfra
+  directory: tests/
+  options:
+    v: true
+    p: "no:cacheprovider"

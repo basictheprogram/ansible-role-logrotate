@@ -7,7 +7,6 @@
     prepare_packages:
       - dialog
       - less
-      - logrotate
       - vim-tiny
 
   environment:
@@ -32,6 +31,11 @@
         install_recommends: false
         force_apt_get: true
       when: ansible_facts['os_family'] == 'Debian'
+
+    - name: Install logrotate
+      ansible.builtin.package:
+        name: logrotate
+        state: present
 
     # Newer Debian/Ubuntu logrotate packages already ship these. Seed them
     # when the image's package does not, so the role always meets drop-ins

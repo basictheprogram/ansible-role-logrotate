@@ -17,12 +17,9 @@
       when: ansible_facts['os_family'] == 'Debian'
 
     - name: Install logrotate
-      ansible.builtin.apt:
+      ansible.builtin.package:
         name: logrotate
         state: present
-        install_recommends: false
-        force_apt_get: true
-      when: ansible_facts['os_family'] == 'Debian'
 
     # Some packages ship these, so remove them to leave wtmp and btmp
     # for the role to define in logrotate.conf.
