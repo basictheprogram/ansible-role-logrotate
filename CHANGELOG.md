@@ -45,6 +45,9 @@ and [human-readable changelog](https://keepachangelog.com/en/1.0.0/).
   release: the `default` scenario on ubuntu-jammy, noble, resolute,
   debian-trixie, rockylinux-9 and opensuse-leap15, and `unowned` on
   ubuntu-noble and rockylinux-9.
+- Added `.github/dependabot.yml`: weekly Dependabot PRs for the GitHub
+  Actions versions in `.github/workflows/` and the hook revisions in
+  `.pre-commit-config.yaml`, each grouped by minor and patch updates.
 - Synced `.ansible-lint`, `.gitignore`, `.pre-commit-config.yaml`, `.yamllint`
   and `ruff.toml` from `roles/_template`.
 

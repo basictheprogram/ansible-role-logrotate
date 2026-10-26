@@ -184,8 +184,10 @@ task files), `conf` (`templates/etc/logrotate.conf.j2`), `application`
   Bob Tanner. Both credited in `LICENSE`.
 * **CI is GitHub Actions only.** `.github/workflows/ci.yml` lints, then
   runs one molecule job per supported OS release on every push to
-  `ansible-core-2.20`. Jenkins was removed; GitLab CI is a future effort.
-  Do not add other CI config without being asked.
+  `ansible-core-2.20`. `.github/dependabot.yml` opens weekly PRs (Mondays)
+  for the action versions and the pre-commit hook revisions; it does not
+  cover the pip requirements. Jenkins was removed; GitLab CI is a future
+  effort. Do not add other CI config without being asked.
 
 ### Open questions
 
