@@ -2,7 +2,7 @@
 # tasks file for realtime.logrotate
 #
 # Fork of arillso/ansible.logrotate (https://github.com/arillso/ansible.logrotate)
-# Maintained by Bob Tanner, Real Time Enterprises, Inc. (fork taken over 2026-05-21)
+# Maintained by Bob Tanner (fork taken over 2026-05-21)
 
 - name: Gather OS specific variables
   ansible.builtin.include_vars: "{{ lookup('first_found', params) }}"

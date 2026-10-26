@@ -13,7 +13,6 @@ galaxy_info:
     Red Hat/Rocky/Alma, and SUSE/openSUSE. Fork of arillso/ansible.logrotate
     (https://github.com/arillso/ansible.logrotate), taken over 2026-05-21
     following upstream archival.
-  company: "Real Time Enterprises, Inc."
   license: "MIT"
   min_ansible_version: "2.20"
   platforms:

@@ -3,8 +3,8 @@ MIT License
 Original work Copyright (c) arillso (https://github.com/arillso)
   ansible.logrotate - https://github.com/arillso/ansible.logrotate
 
-Fork and modifications Copyright (c) 2026 Bob Tanner, Real Time Enterprises, Inc.
-  ansible-role-logrotate - https://github.com/real-time-com/ansible-role-logrotate
+Fork and modifications Copyright (c) 2026 Bob Tanner
+  ansible-role-logrotate
   Fork taken over on 2026-05-21 following upstream archival on 2025-11-19.
 
 Permission is hereby granted, free of charge, to any person obtaining a copy

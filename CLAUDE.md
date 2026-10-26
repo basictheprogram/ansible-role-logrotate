@@ -6,7 +6,7 @@ Debian/Ubuntu, Red Hat/Rocky/Alma, and SUSE/openSUSE systems.
 Forked from arillso/ansible.logrotate
 (https://github.com/arillso/ansible.logrotate), which was archived
 read-only on 2025-11-19. Fork taken over on 2026-05-21 by Bob Tanner,
-Real Time Enterprises, Inc. Consolidated from two roles
+Consolidated from two roles
 (`realtime.logrotate` + `realtime.logrotate_core`) into this single
 role.
 
@@ -212,7 +212,7 @@ and `ansible.builtin.assert` for all conditions.
   when no distro file is found — `logrotate_distribution_options`
   defaults to `[]`.
 * **MIT license.** Original work by arillso. Modifications by
-  Bob Tanner, Real Time Enterprises, Inc. Both credited in `LICENSE`.
+  Bob Tanner. Both credited in `LICENSE`.
 * **No CI/CD in this repo yet.** Jenkins removed; GitLab CI is a
   future effort. Do not add CI config without being asked.
 

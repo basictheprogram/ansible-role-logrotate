@@ -9,8 +9,7 @@ This role is a fork of [arillso/ansible.logrotate](https://github.com/arillso/an
 originally authored by [arillso](https://github.com/arillso) and licensed under
 the MIT License. The upstream repository was archived read-only on 2025-11-19.
 
-Fork taken over on 2026-05-21 by Bob Tanner, Real Time Enterprises, Inc.
-Maintained at: https://github.com/real-time-com/ansible-role-logrotate
+Fork taken over on 2026-05-21 by Bob Tanner.
 
 Changes from upstream: see [CHANGELOG.md](CHANGELOG.md).
 
@@ -155,10 +154,8 @@ a single drop-in file to cover several log path patterns with different options.
 MIT — see [LICENSE](LICENSE).
 
 Original work by [arillso](https://github.com/arillso).
-Modifications and ongoing maintenance by Bob Tanner,
-[Real Time Enterprises, Inc.](https://www.real-time.com)
+Modifications and ongoing maintenance by Bob Tanner.
 
 ## Author information
 
-- Bob Tanner — https://github.com/basictheprogram
-- Real Time Enterprises, Inc. — https://www.real-time.com
+- Bob Tanner

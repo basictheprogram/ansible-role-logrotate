@@ -5,7 +5,7 @@ and [human-readable changelog](https://keepachangelog.com/en/1.0.0/).
 
 ---
 
-## Unreleased (realtime fork — Bob Tanner, Real Time Enterprises, Inc.)
+## Unreleased (realtime fork — Bob Tanner)
 
 ### Changed — Fork Takeover (2026-05-21)
 
