@@ -19,8 +19,8 @@
 # packages drop log rotation information into this directory
 include {{ logrotate_include_dir }}
 
-# no packages own wtmp or btmp -- we'll rotate them here
-{% if logrotate_wtmp_enable %}
+# wtmp and btmp are rotated here only when no drop-in above already does
+{% if __logrotate_render_wtmp | default(logrotate_wtmp_enable) | bool %}
 {{ logrotate_wtmp.logs | join(" ") }} {
 {% for option in logrotate_wtmp.options %}
     {{ option }}
@@ -28,7 +28,7 @@ include {{ logrotate_include_dir }}
 }
 {% endif %}
 
-{% if logrotate_btmp_enable %}
+{% if __logrotate_render_btmp | default(logrotate_btmp_enable) | bool %}
 {{ logrotate_btmp.logs | join(" ") }} {
 {% for option in logrotate_btmp.options %}
     {{ option }}

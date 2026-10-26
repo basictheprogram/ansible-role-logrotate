@@ -34,6 +34,48 @@
   when: ansible_facts['os_family'] == 'RedHat'
   tags: logrotate
 
+# logrotate exits 1 with "duplicate log entry" when a log is defined in
+# logrotate.conf and again in a drop-in. Newer Debian/Ubuntu packages ship
+# /etc/logrotate.d/wtmp and btmp, so those blocks are only written here when
+# no drop-in already owns the log. The excludes are logrotate's own ignored
+# file extensions (tabooext).
+- name: Find drop-ins that already rotate the wtmp and btmp logs
+  become: true
+  ansible.builtin.find:
+    paths: "{{ logrotate_include_dir }}"
+    excludes:
+      - "*~"
+      - "*.cfsaved"
+      - "*.disabled"
+      - "*.dpkg-*"
+      - "*.rhn-cfg-tmp-*"
+      - "*.rpmnew"
+      - "*.rpmorig"
+      - "*.rpmsave"
+      - "*.swp"
+    contains: >-
+      ^[^#]*(^|[\s"'])({{ item.logs | map('regex_escape') | join('|') }})([\s{"']|$)
+    follow: true
+  loop:
+    - "{{ logrotate_wtmp }}"
+    - "{{ logrotate_btmp }}"
+  loop_control:
+    label: "{{ item.logs | join(' ') }}"
+  register: __logrotate_dropin_owners
+  when: logrotate_global_config | bool
+  tags: logrotate
+
+- name: Decide which of wtmp and btmp logrotate.conf defines itself
+  ansible.builtin.set_fact:
+    __logrotate_render_wtmp: >-
+      {{ logrotate_wtmp_enable | bool and
+         __logrotate_dropin_owners.results[0].matched == 0 }}
+    __logrotate_render_btmp: >-
+      {{ logrotate_btmp_enable | bool and
+         __logrotate_dropin_owners.results[1].matched == 0 }}
+  when: logrotate_global_config | bool
+  tags: logrotate
+
 - name: Create logrotate global configuration
   become: true
   ansible.builtin.template:
@@ -42,6 +84,7 @@
     owner: root
     group: root
     mode: "0644"
+    validate: "/usr/sbin/logrotate --debug %s"
   when: logrotate_global_config | bool
   tags: logrotate
 
@@ -53,7 +96,18 @@
     owner: root
     group: root
     mode: "0644"
+    validate: "/usr/sbin/logrotate --debug %s"
   loop: "{{ logrotate_applications }}"
+  tags: logrotate
+
+# The same check logrotate.service runs nightly. Catches what the per-file
+# validation cannot, such as two drop-ins defining the same log.
+- name: Verify logrotate accepts the final configuration
+  become: true
+  ansible.builtin.command:
+    cmd: /usr/sbin/logrotate --debug /etc/logrotate.conf
+  changed_when: false
+  when: not ansible_check_mode
   tags: logrotate
 
 - name: Create hourly cron symlink for logrotate

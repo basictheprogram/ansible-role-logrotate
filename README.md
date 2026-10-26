@@ -81,6 +81,15 @@ logrotate_btmp:
     - rotate 1
 ```
 
+Newer Debian and Ubuntu packages ship `/etc/logrotate.d/wtmp` and `btmp`.
+logrotate exits 1 with `duplicate log entry` when a log is defined in
+both `logrotate.conf` and a drop-in, so the role writes each block only
+when the matching `*_enable` is true **and** no file in
+`logrotate_include_dir` already defines that log. Every template is
+checked with `logrotate --debug` before it is written, and the final
+configuration is checked again after the role finishes, so a bad
+config fails the play instead of the nightly `logrotate.service`.
+
 ### Per-application configs
 
 ```yaml

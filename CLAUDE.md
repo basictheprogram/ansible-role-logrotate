@@ -100,8 +100,9 @@ The role is self-contained — no role dependencies.
                                loaded by the include_vars task in
                                tasks/main.yml using lookup('first_found')
     tasks/main.yml             Orchestrates: include_vars → distro
-                               install → deploy logrotate.conf →
-                               deploy logrotate.d configs → hourly symlink
+                               install → find drop-ins owning wtmp/btmp →
+                               deploy logrotate.conf → deploy logrotate.d
+                               configs → verify → hourly symlink
     tasks/debian.yml           apt install (include_tasks, Debian/Ubuntu)
     tasks/redhat.yml           dnf install (include_tasks, RedHat family)
     tasks/suse.yml             zypper install (include_tasks, SUSE family)
@@ -189,6 +190,11 @@ Tests are written as Ansible tasks using `ansible.builtin.assert` and
 * `logrotate` package is installed (via `package_facts`)
 * `/etc/logrotate.conf` exists, is owned by root, mode `0644`
 * `logrotate --debug /etc/logrotate.conf` exits zero
+* `logrotate.conf` does not redefine wtmp/btmp when drop-ins own them
+  (`prepare.yml` seeds the drop-ins if the package does not ship them)
+
+The `unowned` scenario (`molecule test -s unowned`) removes those
+drop-ins and asserts `logrotate.conf` defines wtmp and btmp itself.
 
 When adding a new feature, extend `verify.yml` with assertions that
 confirm the feature rendered correctly. Use `ansible.builtin.command`

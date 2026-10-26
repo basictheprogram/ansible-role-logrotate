@@ -7,6 +7,19 @@ and [human-readable changelog](https://keepachangelog.com/en/1.0.0/).
 
 ## Unreleased (realtime fork — Bob Tanner)
 
+### Fixed
+
+- `logrotate.conf` no longer defines the wtmp and btmp blocks when a drop-in
+  in `logrotate_include_dir` already does. Newer Debian/Ubuntu ship
+  `/etc/logrotate.d/wtmp` and `btmp`, and the duplicate made logrotate exit 1
+  with `duplicate log entry` on every nightly run.
+- `logrotate.conf` and the per-application drop-ins are validated with
+  `logrotate --debug` before they are written, and the final configuration is
+  verified after the role runs (skipped in check mode).
+- Molecule: `cgroupns_mode: host` and a read-write cgroup mount so the
+  systemd test image starts on Docker Desktop. Added the `unowned` scenario
+  and a seeded-drop-in case in `default`.
+
 ### Changed — Fork Takeover (2026-05-21)
 
 Upstream repository `arillso/ansible.logrotate` was archived read-only on
