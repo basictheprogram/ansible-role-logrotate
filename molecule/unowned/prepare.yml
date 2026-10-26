@@ -1,0 +1,35 @@
+---
+- name: Prepare molecule test host
+  hosts: all
+  become: true
+
+  environment:
+    TZ: "America/Chicago"
+    DEBIAN_FRONTEND: "noninteractive"
+
+  tasks:
+    - name: Update apt cache
+      ansible.builtin.apt:
+        update_cache: true
+        cache_valid_time: 3600
+        force_apt_get: true
+      changed_when: false
+      when: ansible_facts['os_family'] == 'Debian'
+
+    - name: Install logrotate
+      ansible.builtin.apt:
+        name: logrotate
+        state: present
+        install_recommends: false
+        force_apt_get: true
+      when: ansible_facts['os_family'] == 'Debian'
+
+    # Some packages ship these, so remove them to leave wtmp and btmp
+    # for the role to define in logrotate.conf.
+    - name: Remove drop-ins that own wtmp and btmp
+      ansible.builtin.file:
+        path: "/etc/logrotate.d/{{ item }}"
+        state: absent
+      loop:
+        - wtmp
+        - btmp

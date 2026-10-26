@@ -7,6 +7,7 @@
     prepare_packages:
       - dialog
       - less
+      - logrotate
       - vim-tiny
 
   environment:
@@ -31,3 +32,24 @@
         install_recommends: false
         force_apt_get: true
       when: ansible_facts['os_family'] == 'Debian'
+
+    # Newer Debian/Ubuntu logrotate packages already ship these. Seed them
+    # when the image's package does not, so the role always meets drop-ins
+    # that own wtmp and btmp.
+    - name: Ensure drop-ins that own wtmp and btmp exist
+      ansible.builtin.copy:
+        dest: "/etc/logrotate.d/{{ item.name }}"
+        content: |
+          {{ item.log }} {
+              missingok
+              monthly
+              create {{ item.create }}
+              rotate 1
+          }
+        owner: root
+        group: root
+        mode: "0644"
+        force: false
+      loop:
+        - {name: wtmp, log: /var/log/wtmp, create: "0664 root utmp"}
+        - {name: btmp, log: /var/log/btmp, create: "0660 root utmp"}

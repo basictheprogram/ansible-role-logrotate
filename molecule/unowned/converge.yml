@@ -1,0 +1,13 @@
+---
+- name: Converge
+  hosts: all
+  become: true
+
+  environment:
+    TZ: "America/Chicago"
+    DEBIAN_FRONTEND: "noninteractive"
+
+  tasks:
+    - name: Include role realtime.logrotate
+      ansible.builtin.include_role:
+        name: realtime.logrotate

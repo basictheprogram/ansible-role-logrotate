@@ -29,6 +29,19 @@
         fail_msg: "/etc/logrotate.conf missing or has wrong ownership/permissions"
         success_msg: "/etc/logrotate.conf exists with correct ownership and permissions"
 
+    - name: Read /etc/logrotate.conf
+      ansible.builtin.slurp:
+        src: /etc/logrotate.conf
+      register: logrotate_conf_content
+
+    - name: Assert logrotate.conf leaves wtmp and btmp to their drop-ins
+      ansible.builtin.assert:
+        that:
+          - "'/var/log/wtmp' not in (logrotate_conf_content.content | b64decode)"
+          - "'/var/log/btmp' not in (logrotate_conf_content.content | b64decode)"
+        fail_msg: "logrotate.conf redefines wtmp or btmp that a drop-in already owns"
+        success_msg: "logrotate.conf does not duplicate the wtmp and btmp drop-ins"
+
     - name: Assert logrotate runs without error
       ansible.builtin.command:
         cmd: logrotate --debug /etc/logrotate.conf
