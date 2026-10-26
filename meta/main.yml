@@ -9,35 +9,29 @@ galaxy_info:
   author: "Bob Tanner"
   role_name: logrotate
   description: >
-    Ansible role to install and configure logrotate on Debian/Ubuntu,
-    Red Hat/Rocky/Alma, and SUSE/openSUSE. Fork of arillso/ansible.logrotate
+    Install and configure logrotate: /etc/logrotate.conf, per-application
+    drop-ins under /etc/logrotate.d, and wtmp/btmp rotation, validated with
+    logrotate --debug before they are written. For Debian (trixie), Ubuntu
+    (jammy, noble, resolute), EL (9: Rocky, Alma, RHEL) and SUSE/openSUSE
+    Leap. Fork of arillso/ansible.logrotate
     (https://github.com/arillso/ansible.logrotate), taken over 2026-05-21
     following upstream archival.
+  issue_tracker_url: https://github.com/basictheprogram/ansible-role-logrotate/issues
   license: "MIT"
   min_ansible_version: "2.20"
-  platforms:
-    - name: Ubuntu
-      versions:
-        - jammy
-        - noble
-        - resolute
-    - name: Debian
-      versions:
-        - bookworm
-        - trixie
-    - name: EL
-      versions:
-        - "8"
-        - "9"
-    - name: opensuse
-      versions:
-        - all
   galaxy_tags:
     - linux
     - logrotate
     - log
+    - logs
     - rotate
+    - wtmp
+    - btmp
+    - cron
     - ubuntu
     - debian
     - redhat
+    - rocky
+    - almalinux
     - suse
+    - opensuse
