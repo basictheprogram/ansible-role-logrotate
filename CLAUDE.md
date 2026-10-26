@@ -182,8 +182,10 @@ task files), `conf` (`templates/etc/logrotate.conf.j2`), `application`
   defaults to `[]`.
 * **MIT license.** Original work by arillso. Modifications by
   Bob Tanner. Both credited in `LICENSE`.
-* **No CI/CD in this repo yet.** Jenkins removed; GitLab CI is a
-  future effort. Do not add CI config without being asked.
+* **CI is GitHub Actions only.** `.github/workflows/ci.yml` lints, then
+  runs one molecule job per supported OS release on every push to
+  `ansible-core-2.20`. Jenkins was removed; GitLab CI is a future effort.
+  Do not add other CI config without being asked.
 
 ### Open questions
 
@@ -258,7 +260,8 @@ When adding a new platform:
 3. Add or update the appropriate `tasks/<family>.yml` if the package
    manager differs.
 4. Update `README.md` platform table.
-5. Add a molecule platform to `molecule/default/molecule.yml`.
+5. Add a molecule platform to `molecule/default/molecule.yml`, and the
+   same platform name to the matrix in `.github/workflows/ci.yml`.
 
 ## Testing locally
 

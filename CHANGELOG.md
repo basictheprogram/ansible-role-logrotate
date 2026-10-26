@@ -40,6 +40,11 @@ and [human-readable changelog](https://keepachangelog.com/en/1.0.0/).
   `molecule/requirements.txt`) instead of `verify.yml`, and `converge.yml`
   refreshes the apt/dnf cache first and uses `su root root` so the fixture
   works on SUSE as well.
+- Added `.github/workflows/ci.yml`: on every push to `ansible-core-2.20`
+  (and on demand) it runs pre-commit, then molecule once per supported OS
+  release: the `default` scenario on ubuntu-jammy, noble, resolute,
+  debian-trixie, rockylinux-9 and opensuse-leap15, and `unowned` on
+  ubuntu-noble and rockylinux-9.
 - Synced `.ansible-lint`, `.gitignore`, `.pre-commit-config.yaml`, `.yamllint`
   and `ruff.toml` from `roles/_template`.
 
