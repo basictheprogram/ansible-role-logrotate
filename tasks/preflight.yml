@@ -1,0 +1,93 @@
+---
+# tasks file for logrotate — preflight assertions
+#
+# Runs before anything touches the host, so a bad variable or an unsupported
+# host fails with a clear message instead of a template or include_vars error.
+
+- name: Assert ansible-core meets the minimum version
+  ansible.builtin.assert:
+    that:
+      - ansible_version.full is version('2.20', '>=')
+    fail_msg: "realtime.logrotate requires ansible-core 2.20 or newer, found {{ ansible_version.full }}"
+    quiet: true
+  tags: always
+
+- name: Assert the host's OS family is supported
+  ansible.builtin.assert:
+    that:
+      - ansible_facts['os_family'] in ['Debian', 'RedHat', 'Suse']
+    fail_msg: >-
+      realtime.logrotate supports the Debian, RedHat and Suse OS families,
+      {{ inventory_hostname }} is {{ ansible_facts['os_family'] }}
+    quiet: true
+  tags: always
+
+- name: Assert logrotate_options and logrotate_applications are lists
+  ansible.builtin.assert:
+    that:
+      - logrotate_options is sequence
+      - logrotate_options is not string
+      - logrotate_options is not mapping
+      - logrotate_applications is sequence
+      - logrotate_applications is not string
+      - logrotate_applications is not mapping
+    fail_msg: "logrotate_options and logrotate_applications must both be lists"
+    quiet: true
+  tags: always
+
+- name: Assert logrotate_include_dir is an absolute path
+  ansible.builtin.assert:
+    that:
+      - logrotate_include_dir is string
+      - logrotate_include_dir.startswith('/')
+    fail_msg: "logrotate_include_dir must be an absolute path, found {{ logrotate_include_dir }}"
+    quiet: true
+  tags: always
+
+# The drop-in finder reads .logs of both, and logrotate.conf.j2 reads .options.
+- name: Assert logrotate_wtmp and logrotate_btmp define logs and options
+  ansible.builtin.assert:
+    that:
+      - logrotate_log_set.config.logs is sequence
+      - logrotate_log_set.config.logs is not string
+      - logrotate_log_set.config.logs | length > 0
+      - logrotate_log_set.config.options is sequence
+      - logrotate_log_set.config.options is not string
+    fail_msg: "{{ logrotate_log_set.name }} must be a mapping with a non-empty logs list and an options list"
+    quiet: true
+  loop:
+    - {name: logrotate_wtmp, config: "{{ logrotate_wtmp }}"}
+    - {name: logrotate_btmp, config: "{{ logrotate_btmp }}"}
+  loop_control:
+    loop_var: logrotate_log_set
+    label: "{{ logrotate_log_set.name }}"
+  when: logrotate_global_config | bool
+  tags: always
+
+# application.j2 reads .definitions, and each definition's .logs and .options.
+- name: Assert each logrotate_applications entry is well formed
+  ansible.builtin.assert:
+    that:
+      - logrotate_application is mapping
+      - logrotate_application.name | default('') is string
+      - logrotate_application.name | default('') | length > 0
+      - "'/' not in logrotate_application.name"
+      - logrotate_application.definitions | default([]) is sequence
+      - logrotate_application.definitions | default([]) is not string
+      - logrotate_application.definitions | default([]) | length > 0
+      - >-
+        logrotate_application.definitions
+        | selectattr('logs', 'defined')
+        | selectattr('options', 'defined')
+        | list | length == logrotate_application.definitions | length
+    fail_msg: >-
+      Each logrotate_applications entry needs a name without '/' and a
+      non-empty definitions list, and every definition needs logs and options.
+      Check the entry named
+      {{ logrotate_application.name | default('(unnamed)') if logrotate_application is mapping else '(not a mapping)' }}.
+    quiet: true
+  loop: "{{ logrotate_applications }}"
+  loop_control:
+    loop_var: logrotate_application
+    label: "{{ logrotate_application.name | default('(unnamed)') if logrotate_application is mapping else '(not a mapping)' }}"
+  tags: always

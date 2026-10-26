@@ -4,6 +4,10 @@
 # Fork of arillso/ansible.logrotate (https://github.com/arillso/ansible.logrotate)
 # Maintained by Bob Tanner (fork taken over 2026-05-21)
 
+- name: Run preflight assertions
+  ansible.builtin.include_tasks: preflight.yml
+  tags: always
+
 - name: Gather OS specific variables
   ansible.builtin.include_vars: "{{ lookup('first_found', params) }}"
   vars:
@@ -99,13 +103,13 @@
     mode: "0644"
     validate: "/usr/sbin/logrotate --debug %s"
   loop: "{{ logrotate_applications }}"
+  loop_control:
+    loop_var: logrotate_application
+    label: "{{ logrotate_application.name }}"
   tags: logrotate
 
 # The same check logrotate.service runs nightly. Catches what the per-file
 # validation cannot, such as two drop-ins defining the same log.
-  loop_control:
-    loop_var: logrotate_application
-    label: "{{ logrotate_application.name }}"
 - name: Verify logrotate accepts the final configuration
   become: true
   ansible.builtin.command:
