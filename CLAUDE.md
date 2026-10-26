@@ -207,7 +207,8 @@ commit. Stop and verify between items.
 5. `handlers/main.yml` — empty; the role defines no handlers.
 6. `molecule/` — `default` (six platforms, drop-ins own wtmp/btmp) and
    `unowned` (ubuntu-noble, rockylinux-9) scenarios, testinfra verifier.
-   Written 2026-10-25 but not yet run on the full matrix.
+   Both pass on ubuntu-noble and rockylinux-9 (2026-10-25); the other
+   four `default` platforms are not yet run (see TODO.md).
 7. `tasks/preflight.yml` — done (runs first, wired from `tasks/main.yml`).
 8. testinfra suite and `molecule/requirements.txt` — done.
 

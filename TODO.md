@@ -3,18 +3,15 @@
 Items flagged during the 2026-10-25 `ansible-sync-role` run that were not
 resolved in that session.
 
-- [ ] **Run the molecule matrix.** The new setup was only checked statically
-  (pre-commit, `molecule syntax`, `pytest --collect-only`) and the preflight
-  tasks were run by hand against the devcontainer. `molecule test` has not run
-  on the new matrix, because the five missing images were not pulled:
-  `geerlingguy/docker-ubuntu2204`, `ubuntu2604`, `debian13`, `rockylinux9`,
-  `opensuseleap15` (`-ansible:latest`). Pull them on the macOS terminal (the
-  devcontainer's credential store breaks `docker pull`), then:
-  `make molecule ROLE=roles/git_repository/ansible-role-logrotate CMD=test`
-  and `... CMD="test -s unowned"`. Only the rockylinux-9 and opensuse-leap15
-  paths are completely new: `prepare.yml` now uses `ansible.builtin.package`,
-  converge uses `su root root`, and the zypper and dnf install tasks have not
-  run under molecule before.
+- [ ] **Run the rest of the molecule matrix.** On 2026-10-25 `default` and
+  `unowned` were run and passed (15 and 8 testinfra tests, including
+  idempotence) on ubuntu-noble and rockylinux-9 only, to save Docker disk.
+  Not yet run: ubuntu-jammy, ubuntu-resolute, debian-trixie and
+  opensuse-leap15 in `default`. opensuse-leap15 is the one most worth
+  running, since the zypper install task and the `su root root` fixture have
+  never run under molecule. Pull the images on the macOS terminal (the
+  devcontainer's credential store breaks `docker pull`), then
+  `make molecule ROLE=roles/git_repository/ansible-role-logrotate CMD="test --platform-name opensuse-leap15"`.
 - [ ] **No automated negative test for preflight.** Both scenarios only prove
   preflight passes on valid input. The failure messages were checked by hand
   (bad `logrotate_applications` shapes, empty `logrotate_wtmp.logs`, relative
