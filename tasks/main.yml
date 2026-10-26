@@ -54,13 +54,14 @@
       - "*.rpmsave"
       - "*.swp"
     contains: >-
-      ^[^#]*(^|[\s"'])({{ item.logs | map('regex_escape') | join('|') }})([\s{"']|$)
+      ^[^#]*(^|[\s"'])({{ logrotate_owned_log.logs | map('regex_escape') | join('|') }})([\s{"']|$)
     follow: true
   loop:
     - "{{ logrotate_wtmp }}"
     - "{{ logrotate_btmp }}"
   loop_control:
-    label: "{{ item.logs | join(' ') }}"
+    loop_var: logrotate_owned_log
+    label: "{{ logrotate_owned_log.logs | join(' ') }}"
   register: __logrotate_dropin_owners
   when: logrotate_global_config | bool
   tags: logrotate
@@ -92,7 +93,7 @@
   become: true
   ansible.builtin.template:
     src: "etc/logrotate.d/application.j2"
-    dest: "{{ logrotate_include_dir }}/{{ item.name }}"
+    dest: "{{ logrotate_include_dir }}/{{ logrotate_application.name }}"
     owner: root
     group: root
     mode: "0644"
@@ -102,6 +103,9 @@
 
 # The same check logrotate.service runs nightly. Catches what the per-file
 # validation cannot, such as two drop-ins defining the same log.
+  loop_control:
+    loop_var: logrotate_application
+    label: "{{ logrotate_application.name }}"
 - name: Verify logrotate accepts the final configuration
   become: true
   ansible.builtin.command:

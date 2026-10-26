@@ -8,7 +8,7 @@
   Supports: options, postrotate, preremove, lastaction, firstaction script blocks.
 #}
 
-{% for definition in item.definitions %}
+{% for definition in logrotate_application.definitions %}
 {{ definition.logs | join(" ") }} {
 {% for option in definition.options %}
     {{ option }}
