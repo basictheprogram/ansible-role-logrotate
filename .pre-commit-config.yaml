@@ -24,7 +24,7 @@ repos:
         entry: yamllint --strict -f parsable
 
   - repo: https://github.com/zricethezav/gitleaks
-    rev: v8.30.0
+    rev: v8.30.1
     hooks:
       - id: gitleaks
 
