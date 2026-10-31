@@ -55,6 +55,13 @@ and [human-readable changelog](https://keepachangelog.com/en/1.0.0/).
 - Added `.github/dependabot.yml`: weekly Dependabot PRs for the GitHub
   Actions versions in `.github/workflows/` and the hook revisions in
   `.pre-commit-config.yaml`, each grouped by minor and patch updates.
+- Updated the pinned versions: `actions/checkout` v7, `actions/setup-python`
+  v7 and `actions/cache` v6 in `ci.yml`, and `ruff-pre-commit` v0.17.3 and
+  `hadolint` v2.15.1 in `.pre-commit-config.yaml`. ruff 0.17 enables
+  `CPY001` by default, so `ruff.toml` now ignores it.
+- `LICENSE` now uses the standard MIT header with Arillso's and Bob Tanner's
+  copyright lines stacked, so GitHub detects it as MIT. The license text is
+  unchanged.
 - Synced `.ansible-lint`, `.gitignore`, `.pre-commit-config.yaml`, `.yamllint`
   and `ruff.toml` from `roles/_template`.
 
