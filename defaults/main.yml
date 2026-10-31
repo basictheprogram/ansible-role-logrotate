@@ -4,7 +4,7 @@
 # Fork of arillso/ansible.logrotate (https://github.com/arillso/ansible.logrotate)
 # Maintained by Bob Tanner (fork taken over 2026-05-21)
 
-# Package(s) to install. Override to add extras (e.g. cronie on EL).
+# Package(s) to install. Override to add extras.
 logrotate_packages:
   - logrotate
 

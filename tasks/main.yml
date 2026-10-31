@@ -28,16 +28,6 @@
   when: ansible_facts['os_family'] == 'Debian'
   tags: logrotate
 
-- name: Include tasks for SUSE/openSUSE
-  ansible.builtin.include_tasks: suse.yml
-  when: ansible_facts['os_family'] in ['Suse', 'openSUSE Leap', 'openSUSE Tumbleweed']
-  tags: logrotate
-
-- name: Include tasks for Red Hat / Rocky / Alma
-  ansible.builtin.include_tasks: redhat.yml
-  when: ansible_facts['os_family'] == 'RedHat'
-  tags: logrotate
-
 # logrotate exits 1 with "duplicate log entry" when a log is defined in
 # logrotate.conf and again in a drop-in. Newer Debian/Ubuntu packages ship
 # /etc/logrotate.d/wtmp and btmp, so those blocks are only written here when

@@ -1,8 +1,0 @@
----
-# Distribution-default global options for /etc/logrotate.conf on SUSE / openSUSE.
-# Used when logrotate_options is empty.
-logrotate_distribution_options:
-  - weekly
-  - rotate 4
-  - create
-  - dateext

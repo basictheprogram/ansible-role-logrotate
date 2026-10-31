@@ -15,9 +15,9 @@
 - name: Assert the host's OS family is supported
   ansible.builtin.assert:
     that:
-      - ansible_facts['os_family'] in ['Debian', 'RedHat', 'Suse']
+      - ansible_facts['os_family'] == 'Debian'
     fail_msg: >-
-      realtime.logrotate supports the Debian, RedHat and Suse OS families,
+      realtime.logrotate supports the Debian OS family (Debian and Ubuntu),
       {{ inventory_hostname }} is {{ ansible_facts['os_family'] }}
     quiet: true
   tags: always
