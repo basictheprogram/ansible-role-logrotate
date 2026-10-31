@@ -20,11 +20,21 @@ and [human-readable changelog](https://keepachangelog.com/en/1.0.0/).
   systemd test image starts on Docker Desktop. Added the `unowned` scenario
   and a seeded-drop-in case in `default`.
 
+### Removed
+
+- **Breaking:** support for the Red Hat family (Rocky, Alma, RHEL, CentOS)
+  and SUSE/openSUSE. Deleted `tasks/redhat.yml`, `tasks/suse.yml`,
+  `vars/RedHat.yml`, `vars/CentOS.yml`, `vars/Suse.yml` and
+  `requirements.yml` (the `community.general` collection was only needed for
+  `community.general.zypper`). The preflight now fails on any OS family other
+  than Debian, which covers Debian and Ubuntu. The rockylinux-9 and
+  opensuse-leap15 molecule platforms and CI jobs are gone with them.
+
 ### Changed
 
-- Supported platforms narrowed to Debian trixie, Ubuntu jammy/noble/resolute,
-  EL 9 and SUSE/openSUSE Leap. Debian bookworm (full support ended 2026-08)
-  and EL 8 (full support ended 2024-05) are no longer claimed or tested.
+- Supported platforms narrowed to Debian trixie and Ubuntu
+  jammy/noble/resolute. Debian bookworm (full support ended 2026-08) is no
+  longer claimed or tested.
 - `meta/main.yml`: removed the `platforms:` key (Galaxy ignores it and
   ansible-lint's validator misreports it); the supported OS list now lives in
   `description:`. Added `issue_tracker_url` and more `galaxy_tags`.
@@ -34,17 +44,14 @@ and [human-readable changelog](https://keepachangelog.com/en/1.0.0/).
 - Loop variables are now prefixed `logrotate_` (`logrotate_application`,
   `logrotate_owned_log`) to satisfy `loop_var_prefix`. `application.j2`
   reads `logrotate_application` instead of `item`.
-- Molecule: `default` now covers ubuntu-jammy/noble/resolute, debian-trixie,
-  rockylinux-9 and opensuse-leap15; `unowned` covers ubuntu-noble and
-  rockylinux-9. Both use the testinfra verifier (`tests/` per scenario,
-  `molecule/requirements.txt`) instead of `verify.yml`, and `converge.yml`
-  refreshes the apt/dnf cache first and uses `su root root` so the fixture
-  works on SUSE as well.
+- Molecule: `default` now covers ubuntu-jammy/noble/resolute and
+  debian-trixie; `unowned` covers ubuntu-noble. Both use the testinfra
+  verifier (`tests/` per scenario, `molecule/requirements.txt`) instead of
+  `verify.yml`, and `converge.yml` refreshes the apt cache first.
 - Added `.github/workflows/ci.yml`: on every push to `ansible-core-2.20`
   (and on demand) it runs pre-commit, then molecule once per supported OS
-  release: the `default` scenario on ubuntu-jammy, noble, resolute,
-  debian-trixie, rockylinux-9 and opensuse-leap15, and `unowned` on
-  ubuntu-noble and rockylinux-9.
+  release: the `default` scenario on ubuntu-jammy, noble, resolute and
+  debian-trixie, and `unowned` on ubuntu-noble.
 - Added `.github/dependabot.yml`: weekly Dependabot PRs for the GitHub
   Actions versions in `.github/workflows/` and the hook revisions in
   `.pre-commit-config.yaml`, each grouped by minor and patch updates.

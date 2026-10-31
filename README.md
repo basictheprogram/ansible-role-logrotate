@@ -1,7 +1,7 @@
 # ansible-role-logrotate
 
 Ansible role to install and configure [logrotate](https://github.com/logrotate/logrotate)
-on Debian/Ubuntu, Red Hat/CentOS/Rocky/Alma, and SUSE/openSUSE systems.
+on Debian and Ubuntu systems.
 
 ## Fork notice
 
@@ -16,8 +16,6 @@ Changes from upstream: see [CHANGELOG.md](CHANGELOG.md).
 ## Requirements
 
 - ansible-core >= 2.20
-- `community.general` collection (for SUSE/openSUSE support — install via
-  `ansible-galaxy collection install -r requirements.yml`)
 
 ## Supported platforms
 
@@ -25,8 +23,9 @@ Changes from upstream: see [CHANGELOG.md](CHANGELOG.md).
 |----------|----------|
 | Ubuntu   | jammy (22.04), noble (24.04), resolute (26.04) |
 | Debian   | trixie (13) |
-| EL (Rocky/Alma/RHEL/CentOS) | 9 |
-| SUSE / openSUSE Leap | current |
+
+Red Hat family (Rocky, Alma, RHEL, CentOS) and SUSE/openSUSE support was
+removed on 2026-10-31; see [CHANGELOG.md](CHANGELOG.md).
 
 ## Role variables
 
@@ -35,7 +34,7 @@ All variables have defaults and can be overridden in your inventory or playbook.
 ### Package
 
 ```yaml
-# Package(s) to install. Override to add extras (e.g. cronie on EL).
+# Package(s) to install. Override to add extras.
 logrotate_packages:
   - logrotate
 ```
@@ -131,20 +130,20 @@ replaces them entirely.
 
 | File | `logrotate_distribution_options` |
 |------|----------------------------------|
-| `Debian.yml`, `RedHat.yml`, `CentOS.yml`, `Suse.yml` | `weekly`, `rotate 4`, `create`, `dateext` |
+| `Debian.yml` | `weekly`, `rotate 4`, `create`, `dateext` |
 | `Ubuntu.yml` | the above plus `su root syslog` |
 
 ## Task flow
 
 1. **Preflight** (`tasks/preflight.yml`, first task, tag `always`): asserts
-   ansible-core >= 2.20, an OS family of Debian, RedHat or Suse,
+   ansible-core >= 2.20, an OS family of Debian (Debian and Ubuntu),
    `logrotate_options` and `logrotate_applications` are lists,
    `logrotate_include_dir` is an absolute path, `logrotate_wtmp` and
    `logrotate_btmp` define `logs` and `options`, and every
    `logrotate_applications` entry has a `name` and `definitions` that each
    carry `logs` and `options`.
 2. Load `vars/<Distribution>.yml` (`logrotate_distribution_options`).
-3. Install the package (`debian.yml`, `redhat.yml` or `suse.yml`).
+3. Install the package (`debian.yml`).
 4. Find drop-ins in `logrotate_include_dir` that already rotate wtmp or btmp.
 5. Write `/etc/logrotate.conf`, validated with `logrotate --debug`.
 6. Write the per-application drop-ins, each validated the same way.

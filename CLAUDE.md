@@ -6,8 +6,8 @@ https://github.com/basictheprogram/ansible-role-logrotate. Bugs and pull
 requests go to the fork repo, not upstream (upstream was archived
 read-only on 2025-11-19).
 
-Ansible role to install and configure logrotate on Debian/Ubuntu,
-Red Hat/Rocky/Alma, and SUSE/openSUSE. Fork of arillso/ansible.logrotate,
+Ansible role to install and configure logrotate on Debian and Ubuntu.
+Fork of arillso/ansible.logrotate,
 taken over 2026-05-21 following upstream archival. Consolidated from two
 roles (`realtime.logrotate` + `realtime.logrotate_core`) into this single
 role.
@@ -77,21 +77,22 @@ Every changed line should trace directly to the request.
 Transform requests into verifiable outcomes:
 
 * "Add a new distro" → `meta/main.yml` updated, `vars/<Distro>.yml`
-  exists, `molecule converge` passes, `pre-commit run --all-files` clean.
+  exists, the new platform's CI molecule job passes, `pre-commit run
+  --all-files` clean.
 * "Add an application config variable" → rendered template matches
-  expected logrotate.d syntax, `molecule verify` passes.
-* "Add a preflight assertion" → `molecule converge` passes,
-  `molecule verify` passes, `pre-commit run --all-files` is clean.
-* "Fix an idempotency bug" → second `molecule converge` reports zero
-  changed tasks.
+  expected logrotate.d syntax, the CI molecule jobs pass.
+* "Add a preflight assertion" → the CI molecule jobs pass,
+  `pre-commit run --all-files` is clean.
+* "Fix an idempotency bug" → the idempotence step of the CI molecule jobs
+  reports zero changed tasks.
 * "Refactor a template" → rendered output is byte-for-byte identical
   to pre-refactor output on a converged instance.
 
 For multi-step changes, state a brief plan before starting:
 
     1. Edit template → verify: rendered logrotate.conf is valid
-    2. Add task       → verify: molecule converge green
-    3. Add test       → verify: molecule verify green
+    2. Add task       → verify: molecule syntax; CI molecule jobs green
+    3. Add test       → verify: pytest --collect-only; CI jobs green
     4. Lint           → verify: pre-commit run --all-files clean
 
 Strong success criteria allow independent verification. Weak criteria
@@ -126,8 +127,6 @@ The role is self-contained — no role dependencies.
                                deploy logrotate.conf → deploy logrotate.d
                                configs → verify → hourly symlink
     tasks/debian.yml           apt install (include_tasks, Debian/Ubuntu)
-    tasks/redhat.yml           dnf install (include_tasks, RedHat family)
-    tasks/suse.yml             zypper install (include_tasks, SUSE family)
     templates/etc/
       logrotate.conf.j2        Global /etc/logrotate.conf
       logrotate.d/
@@ -162,8 +161,7 @@ None found. No variable in `defaults/`, `vars/` or `tasks/` matches
 
 ### Commit scopes
 
-Role-specific subsystem scopes: `debian`, `redhat`, `suse` (per-family
-task files), `conf` (`templates/etc/logrotate.conf.j2`), `application`
+Role-specific subsystem scopes: `debian` (the package task file), `conf` (`templates/etc/logrotate.conf.j2`), `application`
 (`templates/etc/logrotate.d/application.j2`)
 
 ### Settled decisions
@@ -180,6 +178,10 @@ task files), `conf` (`templates/etc/logrotate.conf.j2`), `application`
   `with_first_found` + `loop_control` (deprecated). Not a hard fail
   when no distro file is found — `logrotate_distribution_options`
   defaults to `[]`.
+* **Debian and Ubuntu only.** Red Hat family and SUSE/openSUSE support was
+  removed at the maintainer's request on 2026-10-31, together with their
+  task and vars files and `requirements.yml`. Do not re-add them without
+  being asked.
 * **MIT license.** Original work by arillso. Modifications by
   Bob Tanner. Both credited in `LICENSE`.
 * **CI is GitHub Actions only.** `.github/workflows/ci.yml` lints, then
@@ -204,15 +206,14 @@ commit. Stop and verify between items.
    `logrotate_options`, `logrotate_include_dir`, `logrotate_global_config`,
    `logrotate_use_hourly_rotation`, `logrotate_wtmp_*`, `logrotate_btmp_*`,
    `logrotate_applications`.
-2. `vars/<Distribution>.yml` — done for CentOS, Debian, RedHat, Suse, Ubuntu.
-3. `tasks/` — done: `main.yml`, `debian.yml`, `redhat.yml`, `suse.yml`.
+2. `vars/<Distribution>.yml` — done for Debian and Ubuntu.
+3. `tasks/` — done: `main.yml`, `preflight.yml`, `debian.yml`.
 4. `templates/` — done: `etc/logrotate.conf.j2`,
    `etc/logrotate.d/application.j2`.
 5. `handlers/main.yml` — empty; the role defines no handlers.
-6. `molecule/` — `default` (six platforms, drop-ins own wtmp/btmp) and
-   `unowned` (ubuntu-noble, rockylinux-9) scenarios, testinfra verifier.
-   Both pass on ubuntu-noble and rockylinux-9 (2026-10-25); the other
-   four `default` platforms are not yet run (see TODO.md).
+6. `molecule/` — `default` (ubuntu-jammy, noble, resolute, debian-trixie;
+   drop-ins own wtmp/btmp) and `unowned` (ubuntu-noble) scenarios, testinfra
+   verifier. All five jobs passed in CI on 2026-10-26.
 7. `tasks/preflight.yml` — done (runs first, wired from `tasks/main.yml`).
 8. testinfra suite and `molecule/requirements.txt` — done.
 
@@ -220,16 +221,14 @@ commit. Stop and verify between items.
 
 See the Example playbook section of `README.md`. Consumers set global
 options with `logrotate_options` and per-application drop-ins with
-`logrotate_applications`. SUSE support needs the `community.general`
-collection from `requirements.yml`.
+`logrotate_applications`.
 
 ---
 
 ## Conventions
 
 * **FQCN**: all module calls use fully-qualified collection names
-  (`ansible.builtin.template`, `ansible.builtin.apt`,
-  `ansible.builtin.dnf`, `community.general.zypper`). The
+  (`ansible.builtin.template`, `ansible.builtin.apt`). The
   `.ansible-lint` config enforces this via `fqcn-builtins`.
 * **`ansible_facts` dict syntax**: always `ansible_facts['key']`,
   never bare `ansible_distribution` or `ansible_os_family`.
@@ -245,14 +244,12 @@ collection from `requirements.yml`.
   tasks are inherently idempotent; the install tasks use `until/retries`
   which is also safe.
 
-## Supported platforms (as of 2026-05-21)
+## Supported platforms (as of 2026-10-31)
 
 | Platform | Versions |
 |----------|----------|
 | Ubuntu   | jammy (22.04), noble (24.04), resolute (26.04) |
 | Debian   | trixie (13) |
-| EL       | 9 (Rocky, Alma, RHEL) |
-| SUSE     | current (openSUSE Leap / SUSE Linux Enterprise) |
 
 Minimum ansible-core: **2.20**
 
@@ -269,10 +266,12 @@ When adding a new platform:
 
 * `pre-commit run --all-files` — fast lint/format pass. Run before
   every commit.
-* `molecule converge` then `molecule verify` — fast iteration during
-  template/task work; skips the destroy/create cycle.
-* `molecule test` — full role exercise. Run before declaring a change
-  done.
+* `molecule syntax -s <scenario>` and `pytest --collect-only
+  molecule/<scenario>/tests` — static checks that need no containers.
+* **Do not run `molecule converge`, `verify` or `test` locally.** The
+  platform images use too much Docker disk. GitHub Actions runs the full
+  molecule matrix on every push to `ansible-core-2.20`; push, then read the
+  run (`gh run list`, `gh run view --log-failed`) instead of testing by hand.
 
 ### Molecule verifier
 
@@ -281,16 +280,16 @@ in `molecule/requirements.txt`. Each scenario has its own `pytest.ini`
 (see its comments: it turns off the `pytest_molecule` and `pytest-ansible`
 plugins that break under Python 3.14 and clash with testinfra).
 
-* `default` runs on ubuntu-jammy, ubuntu-noble, ubuntu-resolute,
-  debian-trixie, rockylinux-9 and opensuse-leap15. `prepare.yml` installs
+* `default` runs on ubuntu-jammy, ubuntu-noble, ubuntu-resolute and
+  debian-trixie. `prepare.yml` installs
   logrotate and seeds `/etc/logrotate.d/wtmp` and `btmp` when the package
   does not ship them, so the role always meets drop-ins that own both logs.
   Tests: `test_packages.py` (logrotate installed) and `test_config.py`
   (`/etc/logrotate.conf` and the `mysql-backup` drop-in exist, are root
   owned, mode `0644`; `logrotate.conf` does not redefine wtmp or btmp; each
   is defined in exactly one file; `logrotate --debug` exits zero).
-* `unowned` (`molecule test -s unowned`) runs on ubuntu-noble and
-  rockylinux-9. `prepare.yml` removes the wtmp and btmp drop-ins, and the
+* `unowned` (run by CI as `molecule test -s unowned`) runs on ubuntu-noble.
+  `prepare.yml` removes the wtmp and btmp drop-ins, and the
   tests assert `logrotate.conf` defines both itself and that no drop-in does.
 
 When adding a new feature, add single-purpose test functions to
@@ -362,8 +361,7 @@ Infer a scope from the role layout or the subsystem being changed.
 Common Ansible role scopes: `tasks`, `handlers`, `templates`,
 `defaults`, `vars`, `meta`, `molecule`, `docker`.
 
-Role-specific subsystem scopes: `debian`, `redhat`, `suse` (per-family
-task files), `conf` (`templates/etc/logrotate.conf.j2`), `application`
+Role-specific subsystem scopes: `debian` (the package task file), `conf` (`templates/etc/logrotate.conf.j2`), `application`
 (`templates/etc/logrotate.d/application.j2`)
 
 Only include a scope when it adds clarity. Prefer a subsystem scope
